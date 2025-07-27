@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="fav/favicon.ico" type="image/x-icon">
+    <meta proprety="og:description" content="Un gestionnaire de licences pour organiser et gérer vos clés de logiciels.">
+    <title>Gestionnaire de Licences</title>
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #166088;
+            --accent-color: #4fc3f7;
+            --background-color: #f5f7fa;
+            --card-color: #ffffff;
+            --text-color: #333333;
+            --success-color: #4caf50;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        main {
+            padding: 2rem 0;
+        }
+
+        .category {
+            margin-bottom: 3rem;
+        }
+
+        .category-title {
+            font-size: 1.8rem;
+            color: var(--secondary-color);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--accent-color);
+            display: inline-block;
+        }
+
+        .licenses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .license-card {
+            background-color: var(--card-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .license-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .license-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .license-details {
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .license-key-container {
+            display: flex;
+            align-items: center;
+            background-color: #f0f4f8;
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            position: relative;
+        }
+
+        .license-key {
+            flex-grow: 1;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.3rem 0.6rem;
+            cursor: pointer;
+            margin-left: 0.5rem;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .copy-btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .copy-btn i {
+            font-size: 1rem;
+        }
+
+        .expiry-date {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        .tooltip {
+            position: absolute;
+            background-color: #333;
+            color: white;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            top: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+
+        .copy-btn:hover .tooltip {
+            opacity: 1;
+        }
+
+        .copied {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--success-color);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            transform: translateX(200%);
+            transition: transform 0.3s ease-out;
+        }
+
+        .copied.show {
+            transform: translateX(0);
+        }
+        /* Effet de surbrillance lors de la sélection d'un résultat */
+.search-highlight {
+    animation: highlight-fade 2s ease-out;
+    box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+@keyframes highlight-fade {
+    0% { box-shadow: 0 0 0 4px var(--accent-color); }
+    100% { box-shadow: 0 0 0 0 var(--accent-color); }
+}
+
+        /* Barre de recherche */
+.search-container {
+    max-width: 1200px;
+    margin: 0 auto 2rem;
+    padding: 0 20px;
+    position: relative;
+}
+
+.search-box {
+    display: flex;
+    max-width: 500px;
+    margin: 0 auto;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 30px;
+    overflow: hidden;
+}
+
+#searchInput {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    font-size: 1rem;
+    outline: none;
+    background-color: var(--search-bg);
+    border: 1px solid var(--search-border);
+    border-right: none;
+    border-radius: 30px 0 0 30px;
+    transition: all 0.3s ease;
+}
+
+#searchInput:focus {
+    border-color: var(--search-focus);
+    box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.2);
+}
+
+#searchButton {
+    padding: 0 20px;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 0 30px 30px 0;
+    transition: background-color 0.3s;
+}
+
+#searchButton:hover {
+    background-color: var(--secondary-color);
+}
+
+.search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    z-index: 100;
+    max-height: 400px;
+    overflow-y: auto;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    margin-top: 5px;
+    display: none;
+}
+
+.search-result-item {
+    padding: 12px 20px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.search-result-item:hover {
+    background-color: #f5f7fa;
+}
+
+.search-result-item h4 {
+    color: var(--primary-color);
+    margin-bottom: 5px;
+}
+
+.search-result-item p {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.no-results {
+    padding: 15px;
+    text-align: center;
+    color: #666;
+}
+
+.highlight {
+    background-color: #fffde7;
+    font-weight: bold;
+    padding: 0 2px;
+    border-radius: 3px;
+}
+
+@media (max-width: 768px) {
+    .search-box {
+        max-width: 100%;
+    }
+}
+
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            background-color: var(--secondary-color);
+            color: white;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .licenses-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+
+        /* Badges for license types */
+        .license-type {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            font-size: 0.7rem;
+            border-radius: 12px;
+            background-color: #e3f2fd;
+            color: var(--primary-color);
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+
+        /* Animation for cards */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .license-card {
+            animation: fadeIn 0.4s ease-out forwards;
+            opacity: 0;
+        }
+
+        /* Delay animations for each card */
+        .license-card:nth-child(1) { animation-delay: 0.1s; }
+        .license-card:nth-child(2) { animation-delay: 0.2s; }
+        .license-card:nth-child(3) { animation-delay: 0.3s; }
+        .license-card:nth-child(4) { animation-delay: 0.4s; }
+        .license-card:nth-child(5) { animation-delay: 0.5s; }
+        .license-card:nth-child(6) { animation-delay: 0.6s; }
+        .license-card:nth-child(7) { animation-delay: 0.7s; }
+        .license-card:nth-child(8) { animation-delay: 0.8s; }
+        .license-card:nth-child(9) { animation-delay: 0.9s; }
+        .license-card:nth-child(10) { animation-delay: 1s; }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Gestionnaire de Licences</h1>
+            <p class="subtitle">Toutes vos clés de logiciels organisées au même endroit</p>
+        </div>
+    </header><br>
+
+
+    <main class="container">
+        <div class="search-container">
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Rechercher une licence..." autocomplete="off">
+        <button id="searchButton">
+            <i class="fas fa-search"></i>
+        </button>
+    </div>
+    <div id="searchResults" class="search-results"></div>
+</div>
+        <!-- Optimisation Système -->
+        <section class="category">
+            <h2 class="category-title">Optimisation Système</h2>
+            <div class="licenses-grid">
+                <div class="license-card">
+                    <h3 class="license-name">Advanced SystemCare Pro <span class="license-type">6 Mois</span></h3>
+                    <div class="license-details">Version 18 Pro - Optimisation système</div>
+                    <div class="license-key-container">
+                        <span class="license-key">C882C-E36C3-C71ED-2A8G4</span>
+                        <button class="copy-btn" onclick="copyToClipboard('C882C-E36C3-C71ED-2A8G4')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire le: 23-05-2025</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Advanced SystemCare Pro <span class="license-type">6 Mois</span></h3>
+                    <div class="license-details">Version 18 Pro - Optimisation système</div>
+                    <div class="license-key-container">
+                        <span class="license-key">38917-9B756-57185-847G4</span>
+                        <button class="copy-btn" onclick="copyToClipboard('38917-9B756-57185-847G4')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire le: 01-05-2025</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Advanced SystemCare Pro <span class="license-type">18 Mois</span></h3>
+                    <div class="license-details">Version 18 Pro - Optimisation système</div>
+                    <div class="license-key-container">
+                        <span class="license-key">B9535-121C2-15BE0-4940N</span>
+                        <button class="copy-btn" onclick="copyToClipboard('B9535-121C2-15BE0-4940N')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire le: 12-12-2025</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Advanced SystemCare Pro <span class="license-type">18 Mois</span></h3>
+                    <div class="license-details">Version 18 Pro - Optimisation système</div>
+                    <div class="license-key-container">
+                        <span class="license-key">5EBD8-3A223-CFBEA-1FB0N</span>
+                        <button class="copy-btn" onclick="copyToClipboard('5EBD8-3A223-CFBEA-1FB0N')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire le: 12-12-2025</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Advanced SystemCare Pro <span class="license-type">18 Mois</span></h3>
+                    <div class="license-details">Version 18 Pro - Optimisation système</div>
+                    <div class="license-key-container">
+                        <span class="license-key">EDCF1-86427-25445-1DC0N</span>
+                        <button class="copy-btn" onclick="copyToClipboard('EDCF1-86427-25445-1DC0N')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire le: 12-12-2025</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Systèmes d'exploitation -->
+        <section class="category">
+            <h2 class="category-title">Systèmes d'exploitation</h2>
+            <div class="licenses-grid">
+                <div class="license-card">
+                    <h3 class="license-name">Windows 10/11 Professionnel <span class="license-type">VL:MAK</span></h3>
+                    <div class="license-details">Licence Volume - Activation multiple</div>
+                    <div class="license-key-container">
+                        <span class="license-key">8BV46-NY2H3-X8QK6-XK6DD-49CKM</span>
+                        <button class="copy-btn" onclick="copyToClipboard('8BV46-NY2H3-X8QK6-XK6DD-49CKM')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Activation en ligne: 25682</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Windows 10/11 Professionnel <span class="license-type">VL:MAK</span></h3>
+                    <div class="license-details">Licence Volume - Activation multiple</div>
+                    <div class="license-key-container">
+                        <span class="license-key">22CNC-6WC43-2H6Y9-K773G-YG9TY</span>
+                        <button class="copy-btn" onclick="copyToClipboard('22CNC-6WC43-2H6Y9-K773G-YG9TY')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Activation en ligne: 23085</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Windows 10/11 Professionnel <span class="license-type">VL:MAK</span></h3>
+                    <div class="license-details">Licence Volume - Activation multiple</div>
+                    <div class="license-key-container">
+                        <span class="license-key">N3C4C-6G3WV-9XR66-8848P-YKMQB</span>
+                        <button class="copy-btn" onclick="copyToClipboard('N3C4C-6G3WV-9XR66-8848P-YKMQB')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Activation en ligne: 19700</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Windows 10/11 Professionnel <span class="license-type">VL:MAK</span></h3>
+                    <div class="license-details">Licence Volume - Activation multiple</div>
+                    <div class="license-key-container">
+                        <span class="license-key">VTQ6D-NJY7Q-WXTDQ-8M4K7-DRR9M</span>
+                        <button class="copy-btn" onclick="copyToClipboard('VTQ6D-NJY7Q-WXTDQ-8M4K7-DRR9M')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Activation en ligne: 25000</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Windows 10/11 Professionnel <span class="license-type">VL:MAK</span></h3>
+                    <div class="license-details">Licence Volume - Activation multiple</div>
+                    <div class="license-key-container">
+                        <span class="license-key">Y9CHK-7YDJG-HD7YW-F8T3K-NKXTY</span>
+                        <button class="copy-btn" onclick="copyToClipboard('Y9CHK-7YDJG-HD7YW-F8T3K-NKXTY')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Activation en ligne: 24140</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Windows 10/11 Professionnel <span class="license-type">Retail</span></h3>
+                    <div class="license-details">Edition Change/Upgrade key</div>
+                    <div class="license-key-container">
+                        <span class="license-key">KRRVC-RYNT4-8643Y-DWPWF-3DBP6</span>
+                        <button class="copy-btn" onclick="copyToClipboard('KRRVC-RYNT4-8643Y-DWPWF-3DBP6')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Windows 10/11 Professionnel <span class="license-type">Retail</span></h3>
+                    <div class="license-details">Edition Change/Upgrade key</div>
+                    <div class="license-key-container">
+                        <span class="license-key">V9TB7-N4DYY-9P732-G4X6J-2GYP6</span>
+                        <button class="copy-btn" onclick="copyToClipboard('V9TB7-N4DYY-9P732-G4X6J-2GYP6')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Windows 10/11 Professionnel <span class="license-type">Retail</span></h3>
+                    <div class="license-details">Edition Change/Upgrade key</div>
+                    <div class="license-key-container">
+                        <span class="license-key">2RJCR-JNVJ9-HX9VM-K26F2-VFR9G</span>
+                        <button class="copy-btn" onclick="copyToClipboard('2RJCR-JNVJ9-HX9VM-K26F2-VFR9G')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Windows 10/11 Professionnel <span class="license-type">OEM:DM</span></h3>
+                    <div class="license-details">Licence OEM</div>
+                    <div class="license-key-container">
+                        <span class="license-key">2GNB8-DXKRM-4TQWW-46B92-4RG6P</span>
+                        <button class="copy-btn" onclick="copyToClipboard('2GNB8-DXKRM-4TQWW-46B92-4RG6P')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Windows 10/11 Professionnel <span class="license-type">OEM:DM</span></h3>
+                    <div class="license-details">Licence OEM</div>
+                    <div class="license-key-container">
+                        <span class="license-key">YQQX3-NMXJX-BHKHM-TCTK6-QYH22</span>
+                        <button class="copy-btn" onclick="copyToClipboard('YQQX3-NMXJX-BHKHM-TCTK6-QYH22')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Windows 10/11 Professionnel <span class="license-type">OEM:DM</span></h3>
+                    <div class="license-details">Licence OEM</div>
+                    <div class="license-key-container">
+                        <span class="license-key">CQ3NH-WYMGQ-C2T6B-V9PWB-RC2KC</span>
+                        <button class="copy-btn" onclick="copyToClipboard('CQ3NH-WYMGQ-C2T6B-V9PWB-RC2KC')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Windows 10/11 Professionnel <span class="license-type">OEM:DM</span></h3>
+                    <div class="license-details">Licence OEM</div>
+                    <div class="license-key-container">
+                        <span class="license-key">BQVWF-K2NJ9-3PDWH-447RV-CYT6P</span>
+                        <button class="copy-btn" onclick="copyToClipboard('BQVWF-K2NJ9-3PDWH-447RV-CYT6P')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Serveurs Windows -->
+        <section class="category">
+            <h2 class="category-title">Serveurs Windows</h2>
+            <div class="licenses-grid">
+                <div class="license-card">
+                    <h3 class="license-name">Windows Server 2019 Datacenter <span class="license-type">VL:MAK</span></h3>
+                    <div class="license-details">Licence Volume - Activation multiple</div>
+                    <div class="license-key-container">
+                        <span class="license-key">GKNGD-Y3VCQ-MK9CX-H44JR-TVMMV</span>
+                        <button class="copy-btn" onclick="copyToClipboard('GKNGD-Y3VCQ-MK9CX-H44JR-TVMMV')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Activation en ligne: 1000</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Windows Server 2008 R2 Std/Ent <span class="license-type">VL:MAK</span></h3>
+                    <div class="license-details">Licence Volume - Activation multiple</div>
+                    <div class="license-key-container">
+                        <span class="license-key">77V86-CCVDJ-YBKV6-Q89TW-92V96</span>
+                        <button class="copy-btn" onclick="copyToClipboard('77V86-CCVDJ-YBKV6-Q89TW-92V96')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Activation en ligne: 15</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Windows Server 2008 R2 Std/Ent <span class="license-type">VL:MAK</span></h3>
+                    <div class="license-details">Licence Volume - Activation multiple</div>
+                    <div class="license-key-container">
+                        <span class="license-key">BRCDW-B98D9-JC6VW-3GBTX-3GRQH</span>
+                        <button class="copy-btn" onclick="copyToClipboard('BRCDW-B98D9-JC6VW-3GBTX-3GRQH')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Activation en ligne: 50</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Windows Server 2012 R2 Standard <span class="license-type">VL:MAK</span></h3>
+                    <div class="license-details">Licence Volume - Activation multiple</div>
+                    <div class="license-key-container">
+                        <span class="license-key">NM7KG-R2PDW-KXKW7-6X7H6-H8P2J</span>
+                        <button class="copy-btn" onclick="copyToClipboard('NM7KG-R2PDW-KXKW7-6X7H6-H8P2J')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Activation en ligne: 250</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Windows Server 2008 R2 Std/Ent <span class="license-type">VL:MAK</span></h3>
+                    <div class="license-details">Licence Volume - Activation multiple</div>
+                    <div class="license-key-container">
+                        <span class="license-key">9H3QP-6PYH2-24DMT-7WM2T-C74QK</span>
+                        <button class="copy-btn" onclick="copyToClipboard('9H3QP-6PYH2-24DMT-7WM2T-C74QK')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Suite Office -->
+        <section class="category">
+            <h2 class="category-title">Microsoft Office</h2>
+            <div class="licenses-grid">
+                <div class="license-card">
+                    <h3 class="license-name">Office 2024 Pro Plus <span class="license-type">VL:MAK</span></h3>
+                    <div class="license-details">Licence Volume - Activation multiple</div>
+                    <div class="license-key-container">
+                        <span class="license-key">3KR2W-NKWT4-CKWVH-2RDDM-R64PQ</span>
+                        <button class="copy-btn" onclick="copyToClipboard('3KR2W-NKWT4-CKWVH-2RDDM-R64PQ')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Activation possible: 8000 PCs</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Office 2024 Pro Plus <span class="license-type">VL:MAK</span></h3>
+                    <div class="license-details">Licence Volume - Activation multiple</div>
+                    <div class="license-key-container">
+                        <span class="license-key">7TND7-JPR3M-RVFVY-78V4K-T87GD</span>
+                        <button class="copy-btn" onclick="copyToClipboard('7TND7-JPR3M-RVFVY-78V4K-T87GD')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Activation possible: 600 PCs</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Office 2024 Pro Plus <span class="license-type">VL:MAK_AE2</span></h3>
+                    <div class="license-details">Licence Volume - Activation multiple</div>
+                    <div class="license-key-container">
+                        <span class="license-key">7TND7-JPR3M-RVFVY-78V4K-T87GD</span>
+                        <button class="copy-btn" onclick="copyToClipboard('7TND7-JPR3M-RVFVY-78V4K-T87GD')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Activation possible: 321 PCs</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Office 2024 Pro Plus <span class="license-type">VL:MAK_AE2</span></h3>
+                    <div class="license-details">Licence Volume - Activation multiple</div>
+                    <div class="license-key-container">
+                        <span class="license-key">3KR2W-NKWT4-CKWVH-2RDDM-R64PQ</span>
+                        <button class="copy-btn" onclick="copyToClipboard('3KR2W-NKWT4-CKWVH-2RDDM-R64PQ')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Activation possible: 3721 PCs</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Office 2024 Pro Plus <span class="license-type">VL:MAK_AE1</span></h3>
+                    <div class="license-details">Licence Volume - Activation multiple</div>
+                    <div class="license-key-container">
+                        <span class="license-key">4YV2J-VNG7W-YGTP3-443TK-TF8CP</span>
+                        <button class="copy-btn" onclick="copyToClipboard('4YV2J-VNG7W-YGTP3-443TK-TF8CP')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Activation possible: 498 PCs</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sécurité -->
+        <section class="category">
+            <h2 class="category-title">Sécurité</h2>
+            <div class="licenses-grid">
+                <div class="license-card">
+                    <h3 class="license-name">Avast Ultimate Business <span class="license-type">100 Devices</span></h3>
+                    <div class="license-details">PC + Mobile - Sécurité complète</div>
+                    <div class="license-key-container">
+                        <span class="license-key">8Q7S75-FE7CUJ-4YCGYS</span>
+                        <button class="copy-btn" onclick="copyToClipboard('8Q7S75-FE7CUJ-4YCGYS')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire le: 02-02-2025</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Avast Ultimate Business <span class="license-type">100 Devices</span></h3>
+                    <div class="license-details">PC + Mobile - Sécurité complète</div>
+                    <div class="license-key-container">
+                        <span class="license-key">2XVG7P-E33YJJ-4XUGPE</span>
+                        <button class="copy-btn" onclick="copyToClipboard('2XVG7P-E33YJJ-4XUGPE')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire le: 02-02-2025</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Avast Ultimate Business <span class="license-type">100 Devices</span></h3>
+                    <div class="license-details">PC + Mobile - Sécurité complète</div>
+                    <div class="license-key-container">
+                        <span class="license-key">Z2C3GS-8TK57J-4XLG42</span>
+                        <button class="copy-btn" onclick="copyToClipboard('Z2C3GS-8TK57J-4XLG42')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire le: 02-02-2025</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Avast Ultimate Business <span class="license-type">100 Devices</span></h3>
+                    <div class="license-details">PC + Mobile - Sécurité complète</div>
+                    <div class="license-key-container">
+                        <span class="license-key">X2BCRG-B8AGG2-4XCG5N</span>
+                        <button class="copy-btn" onclick="copyToClipboard('X2BCRG-B8AGG2-4XCG5N')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire le: 02-02-2025</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Avast Ultimate Business <span class="license-type">100 Devices</span></h3>
+                    <div class="license-details">PC + Mobile - Sécurité complète</div>
+                    <div class="license-key-container">
+                        <span class="license-key">X8SUJQ-W4JGTJ-4XCG42</span>
+                        <button class="copy-btn" onclick="copyToClipboard('X8SUJQ-W4JGTJ-4XCG42')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire le: 02-02-2025</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Avast Ultimate Business <span class="license-type">100 Devices</span></h3>
+                    <div class="license-details">PC + Mobile - Sécurité complète</div>
+                    <div class="license-key-container">
+                        <span class="license-key">XXBXCN-YS6Q8J-4XLGR6</span>
+                        <button class="copy-btn" onclick="copyToClipboard('XXBXCN-YS6Q8J-4XLGR6')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire le: 02-02-2025</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Avast Ultimate Business <span class="license-type">100 Devices</span></h3>
+                    <div class="license-details">PC + Mobile - Sécurité complète</div>
+                    <div class="license-key-container">
+                        <span class="license-key">PM5SKD-NW7GLJ-4XLGN2</span>
+                        <button class="copy-btn" onclick="copyToClipboard('PM5SKD-NW7GLJ-4XLGN2')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire le: 02-02-2025</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Avast Ultimate Business <span class="license-type">100 Devices</span></h3>
+                    <div class="license-details">PC + Mobile - Sécurité complète</div>
+                    <div class="license-key-container">
+                        <span class="license-key">9WU4DV-FXM5Z2-4XLG3W</span>
+                        <button class="copy-btn" onclick="copyToClipboard('9WU4DV-FXM5Z2-4XLG3W')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire le: 02-02-2025</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Kaspersky Standard Beta <span class="license-type">Global</span></h3>
+                    <div class="license-details">Version Beta - Sécurité internet</div>
+                    <div class="license-key-container">
+                        <span class="license-key">GAJPU-UTD18-3B2JJ-62CQ2</span>
+                        <button class="copy-btn" onclick="copyToClipboard('GAJPU-UTD18-3B2JJ-62CQ2')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire dans: 92 jours</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Kaspersky Internet Security <span class="license-type">Russia</span></h3>
+                    <div class="license-details">Sécurité internet</div>
+                    <div class="license-key-container">
+                        <span class="license-key">BY89B-HNYTZ-KT2RX-1UWDS</span>
+                        <button class="copy-btn" onclick="copyToClipboard('BY89B-HNYTZ-KT2RX-1UWDS')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire dans: 63 jours</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Kaspersky Standard <span class="license-type">Russia</span></h3>
+                    <div class="license-details">Sécurité standard</div>
+                    <div class="license-key-container">
+                        <span class="license-key">1GUEC-CCF6P-GE9Y5-JKN2Q</span>
+                        <button class="copy-btn" onclick="copyToClipboard('1GUEC-CCF6P-GE9Y5-JKN2Q')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire dans: 63 jours</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">ESET Security Premium <span class="license-type">Multi-device</span></h3>
+                    <div class="license-details">Sécurité premium</div>
+                    <div class="license-key-container">
+                        <span class="license-key">8EPG-XFBV-N9PJ-KPS7-W35M</span>
+                        <button class="copy-btn" onclick="copyToClipboard('8EPG-XFBV-N9PJ-KPS7-W35M')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire le: 01/03/2025</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">ESET Security Premium <span class="license-type">Multi-device</span></h3>
+                    <div class="license-details">Sécurité premium</div>
+                    <div class="license-key-container">
+                        <span class="license-key">P2N9-X3WB-95C9-REVX-SM73</span>
+                        <button class="copy-btn" onclick="copyToClipboard('P2N9-X3WB-95C9-REVX-SM73')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire le: 01/03/2025</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Norton 360 Premium + VPN <span class="license-type">10 Licences</span></h3>
+                    <div class="license-details">Support: Windows, Mac, iOS, Android</div>
+                    <div class="license-key-container">
+                        <span class="license-key">XMT9FT8RWTGRYKVH947Q3J697</span>
+                        <button class="copy-btn" onclick="copyToClipboard('XMT9FT8RWTGRYKVH947Q3J697')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire dans: 60 jours</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Norton 360 Advanced <span class="license-type">10 Devices</span></h3>
+                    <div class="license-details">Support: Windows, Mac, iOS, Android</div>
+                    <div class="license-key-container">
+                        <span class="license-key">XK23XXBJJJBQCDTCK9CH2MJ46</span>
+                        <button class="copy-btn" onclick="copyToClipboard('XK23XXBJJJBQCDTCK9CH2MJ46')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire dans: 60 jours</div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">McAfee LiveSafe <span class="license-type">Multi-plateforme</span></h3>
+                    <div class="license-details">Pour PC, MacOS, Android</div>
+                    <div class="license-key-container">
+                        <span class="license-key">LAPT9LVSVPHTY8W</span>
+                        <button class="copy-btn" onclick="copyToClipboard('LAPT9LVSVPHTY8W')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                    <div class="expiry-date">Expire le: 10.04.2025</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Utilitaires -->
+        <section class="category">
+            <h2 class="category-title">Utilitaires</h2>
+            <div class="licenses-grid">
+                <div class="license-card">
+                    <h3 class="license-name">EaseUS Todo Backup Home <span class="license-type">Licence à vie</span></h3>
+                    <div class="license-details">Sauvegarde de données</div>
+                    <div class="license-key-container">
+                        <span class="license-key">REVQH-L77NK-DS5TQ-KTN7V-FI7WB</span>
+                        <button class="copy-btn" onclick="copyToClipboard('REVQH-L77NK-DS5TQ-KTN7V-FI7WB')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">EaseUS Todo Backup Home <span class="license-type">Licence à vie</span></h3>
+                    <div class="license-details">Sauvegarde de données</div>
+                    <div class="license-key-container">
+                        <span class="license-key">MYVTI-ZDX74-FWSHG-TDG1C-WZ2DX</span>
+                        <button class="copy-btn" onclick="copyToClipboard('MYVTI-ZDX74-FWSHG-TDG1C-WZ2DX')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">EaseUS Todo Backup Home <span class="license-type">Licence à vie</span></h3>
+                    <div class="license-details">Sauvegarde de données</div>
+                    <div class="license-key-container">
+                        <span class="license-key">1C9UQ-1HMCL-XWDEH-JF2W8-1WI66</span>
+                        <button class="copy-btn" onclick="copyToClipboard('1C9UQ-1HMCL-XWDEH-JF2W8-1WI66')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Aiarty Image Enhancer <span class="license-type">1 An</span></h3>
+                    <div class="license-details">Amélioration d'images - Windows</div>
+                    <div class="license-key-container">
+                        <span class="license-key">FAFS4-IZFQA-AJJ6Q-632L3</span>
+                        <button class="copy-btn" onclick="copyToClipboard('FAFS4-IZFQA-AJJ6Q-632L3')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Aiarty Image Enhancer <span class="license-type">1 An</span></h3>
+                    <div class="license-details">Amélioration d'images - Windows</div>
+                    <div class="license-key-container">
+                        <span class="license-key">FCOPZ-2UZXQ-OPQC5-NCQH3</span>
+                        <button class="copy-btn" onclick="copyToClipboard('FCOPZ-2UZXQ-OPQC5-NCQH3')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Aiarty Image Enhancer <span class="license-type">1 An</span></h3>
+                    <div class="license-details">Amélioration d'images - Windows</div>
+                    <div class="license-key-container">
+                        <span class="license-key">FA3SC-SRHYK-XYK5U-AWXHZ</span>
+                        <button class="copy-btn" onclick="copyToClipboard('FA3SC-SRHYK-XYK5U-AWXHZ')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Aiarty Image Enhancer <span class="license-type">1 An</span></h3>
+                    <div class="license-details">Amélioration d'images - macOS</div>
+                    <div class="license-key-container">
+                        <span class="license-key">FBFKU-DTXIX-FQLJ5-DI2FS</span>
+                        <button class="copy-btn" onclick="copyToClipboard('FBFKU-DTXIX-FQLJ5-DI2FS')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Aiarty Image Enhancer <span class="license-type">1 An</span></h3>
+                    <div class="license-details">Amélioration d'images - macOS</div>
+                    <div class="license-key-container">
+                        <span class="license-key">FDXQU-DVSTB-GMPZO-BWCZG</span>
+                        <button class="copy-btn" onclick="copyToClipboard('FDXQU-DVSTB-GMPZO-BWCZG')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Aiarty Image Enhancer <span class="license-type">1 An</span></h3>
+                    <div class="license-details">Amélioration d'images - macOS</div>
+                    <div class="license-key-container">
+                        <span class="license-key">FB7WF-J6IYJ-Z62AB-YGZSZ</span>
+                        <button class="copy-btn" onclick="copyToClipboard('FB7WF-J6IYJ-Z62AB-YGZSZ')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">VMware Workstation Pro <span class="license-type">Version 17</span></h3>
+                    <div class="license-details">Virtualisation</div>
+                    <div class="license-key-container">
+                        <span class="license-key">MC60H-DWHD5-H80U9-6V85M-8280D</span>
+                        <button class="copy-btn" onclick="copyToClipboard('MC60H-DWHD5-H80U9-6V85M-8280D')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">VMware Workstation Pro <span class="license-type">Version 17</span></h3>
+                    <div class="license-details">Virtualisation</div>
+                    <div class="license-key-container">
+                        <span class="license-key">4A4RR-813DK-M81A9-4U35H-06KND</span>
+                        <button class="copy-btn" onclick="copyToClipboard('4A4RR-813DK-M81A9-4U35H-06KND')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">VMware Workstation Pro <span class="license-type">Version 17</span></h3>
+                    <div class="license-details">Virtualisation</div>
+                    <div class="license-key-container">
+                        <span class="license-key">NZ4RR-FTK5H-H81C1-Q30QH-1V2LA</span>
+                        <button class="copy-btn" onclick="copyToClipboard('NZ4RR-FTK5H-H81C1-Q30QH-1V2LA')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Camtasia Business <span class="license-type">1 An</span></h3>
+                    <div class="license-details">Édition vidéo - 30 utilisateurs</div>
+                    <div class="license-key-container">
+                        <span class="license-key">B5HNA-8AWC8-2JLCH-B3J6E-YD957</span>
+                        <button class="copy-btn" onclick="copyToClipboard('B5HNA-8AWC8-2JLCH-B3J6E-YD957')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Snagit Business <span class="license-type">1 An</span></h3>
+                    <div class="license-details">Capture d'écran - 30 utilisateurs</div>
+                    <div class="license-key-container">
+                        <span class="license-key">3RFZU-XCZBX-96GEJ-AZFCP-6C729</span>
+                        <button class="copy-btn" onclick="copyToClipboard('3RFZU-XCZBX-96GEJ-AZFCP-6C729')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VPN -->
+        <section class="category">
+            <h2 class="category-title">VPN</h2>
+            <div class="licenses-grid">
+                <div class="license-card">
+                    <h3 class="license-name">Avast SecureLine VPN <span class="license-type">1 Mois</span></h3>
+                    <div class="license-details">Pour 100 appareils</div>
+                    <div class="license-key-container">
+                        <span class="license-key">3HTFVQ-GZ2RFJ-574GD6</span>
+                        <button class="copy-btn" onclick="copyToClipboard('3HTFVQ-GZ2RFJ-574GD6')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Avast SecureLine VPN <span class="license-type">1 Mois</span></h3>
+                    <div class="license-details">Pour 100 appareils</div>
+                    <div class="license-key-container">
+                        <span class="license-key">9SQJE5-J7QDEJ-574GU2</span>
+                        <button class="copy-btn" onclick="copyToClipboard('9SQJE5-J7QDEJ-574GU2')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Avast SecureLine VPN <span class="license-type">1 Mois</span></h3>
+                    <div class="license-details">Pour 100 appareils</div>
+                    <div class="license-key-container">
+                        <span class="license-key">ZYAY7T-RB2QT2-57LG52</span>
+                        <button class="copy-btn" onclick="copyToClipboard('ZYAY7T-RB2QT2-57LG52')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Avast SecureLine VPN <span class="license-type">1 Mois</span></h3>
+                    <div class="license-details">Pour 100 appareils</div>
+                    <div class="license-key-container">
+                        <span class="license-key">26ESXZ-2QC492-574GBA</span>
+                        <button class="copy-btn" onclick="copyToClipboard('26ESXZ-2QC492-574GBA')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Avast SecureLine VPN <span class="license-type">1 Mois</span></h3>
+                    <div class="license-details">Pour 100 appareils</div>
+                    <div class="license-key-container">
+                        <span class="license-key">NXRAQ7-HG45R2-57LG8J</span>
+                        <button class="copy-btn" onclick="copyToClipboard('NXRAQ7-HG45R2-57LG8J')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="license-card">
+                    <h3 class="license-name">Avast SecureLine VPN <span class="license-type">1 Mois</span></h3>
+                    <div class="license-details">Pour 100 appareils</div>
+                    <div class="license-key-container">
+                        <span class="license-key">5HYACK-L2SZW2-57LGBN</span>
+                        <button class="copy-btn" onclick="copyToClipboard('5HYACK-L2SZW2-57LGBN')">
+                            <i class="fas fa-copy"></i>
+                            <span class="tooltip">Copier la clé</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>© 2025 Gestionnaire de Licences. Tous droits réservés à JokerSmiler</p>
+        </div>
+    </footer>
+
+    <div class="copied" id="copiedNotification">Clé copiée!</div>
+
+    <script>
+        // Barre de recherche
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const searchButton = document.getElementById('searchButton');
+    const searchResults = document.getElementById('searchResults');
+    const licenseCards = document.querySelectorAll('.license-card');
+
+    function performSearch() {
+        const searchTerm = searchInput.value.trim().toLowerCase();
+        searchResults.innerHTML = '';
+        
+        if (searchTerm.length < 2) {
+            searchResults.style.display = 'none';
+            return;
+        }
+
+        let hasResults = false;
+
+        licenseCards.forEach(card => {
+            const name = card.querySelector('.license-name').textContent.toLowerCase();
+            const key = card.querySelector('.license-key').textContent.toLowerCase();
+            const details = card.querySelector('.license-details').textContent.toLowerCase();
+            
+            if (name.includes(searchTerm) || key.includes(searchTerm) || details.includes(searchTerm)) {
+                hasResults = true;
+                const resultItem = document.createElement('div');
+                resultItem.className = 'search-result-item';
+                
+                // Highlight matching text
+                const highlightedName = highlightText(card.querySelector('.license-name').textContent, searchTerm);
+                const highlightedKey = highlightText(card.querySelector('.license-key').textContent, searchTerm);
+                
+                resultItem.innerHTML = `
+                    <h4>${highlightedName}</h4>
+                    <p>${highlightedKey}</p>
+                    <p>${card.querySelector('.license-details').textContent}</p>
+                `;
+                
+                resultItem.addEventListener('click', () => {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    card.classList.add('search-highlight');
+                    setTimeout(() => card.classList.remove('search-highlight'), 2000);
+                });
+                
+                searchResults.appendChild(resultItem);
+            }
+        });
+
+        if (hasResults) {
+            searchResults.style.display = 'block';
+        } else {
+            searchResults.innerHTML = '<div class="no-results">Aucun résultat trouvé</div>';
+            searchResults.style.display = 'block';
+        }
+    }
+
+    function highlightText(text, term) {
+        if (!term) return text;
+        const regex = new RegExp(term, 'gi');
+        return text.replace(regex, match => `<span class="highlight">${match}</span>`);
+    }
+
+    // Événements
+    searchInput.addEventListener('input', performSearch);
+    searchButton.addEventListener('click', performSearch);
+
+    // Fermer les résultats quand on clique ailleurs
+    document.addEventListener('click', function(e) {
+        if (!searchResults.contains(e.target) && e.target !== searchInput && e.target !== searchButton) {
+            searchResults.style.display = 'none';
+        }
+    });
+
+    // Recherche avec Entrée
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+});
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                showCopiedNotification();
+            }, function(err) {
+                console.error('Erreur lors de la copie: ', err);
+            });
+        }
+
+        function showCopiedNotification() {
+            const notification = document.getElementById('copiedNotification');
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 2000);
+        }
+
+        // Animation pour les cartes
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.license-card');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = 1;
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            cards.forEach(card => {
+                observer.observe(card);
+            });
+        });
+    </script>
+</body>
+</html>
